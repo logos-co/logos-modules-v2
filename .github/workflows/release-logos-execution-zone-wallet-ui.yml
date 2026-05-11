@@ -1,0 +1,20 @@
+name: Release logos-execution-zone-wallet-ui
+
+# Manually-triggered release for a single submodule. Delegates the
+# build / verify / sign / publish pipeline to the local
+# _release-module.yml reusable workflow so signing config lives in
+# exactly one place.
+#
+# Source of truth for module name + version is
+# submodules/logos-execution-zone-wallet-ui/metadata.json — read by the upstream
+# logos-modules-release-action.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  release:
+    uses: ./.github/workflows/_release-module.yml
+    with:
+      module_path: submodules/logos-execution-zone-wallet-ui
+    secrets: inherit

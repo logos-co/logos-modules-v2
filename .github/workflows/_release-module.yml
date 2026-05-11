@@ -1,0 +1,56 @@
+name: _release-module
+
+# Local reusable workflow — the single place that owns the signing
+# configuration for the entire repository. Each per-module workflow
+# (release-logos-*.yml) delegates here so switching between signing
+# modes (none / inline / external Jenkins) only requires editing this
+# one file instead of all 13 callers.
+#
+# The underscore prefix marks it as "private" — workflow_call only,
+# no workflow_dispatch, so it doesn't surface in the Actions UI as
+# something to run directly. It can only be invoked from a sibling
+# workflow via `uses: ./.github/workflows/_release-module.yml`.
+#
+# Switching signing modes:
+#   - Inline (default): the `signing_key` secret is the JWK private key.
+#   - External: comment out the `signing_mode: inline` line below,
+#     uncomment the external block, and configure the signing command.
+#     The `signing_key` secret is no longer needed; the signing rig
+#     (Jenkins, HSM, etc.) is responsible for producing a signed .lgx.
+#   - None: set `signing_mode: none` and drop the `secrets:` block.
+
+on:
+  workflow_call:
+    inputs:
+      module_path:
+        description: "Path to the module submodule (e.g. submodules/logos-chat-module)."
+        type: string
+        required: true
+
+jobs:
+  release:
+    uses: logos-co/logos-modules-release-action/.github/workflows/release.yml@v1
+    with:
+      module_path: ${{ inputs.module_path }}
+
+      # ─── Signing mode (edit here, not in each caller) ────────────────
+      #signing_mode: inline
+
+      # External signing example (Jenkins / HSM). Uncomment + delete the
+      # inline line above to switch. signing_command runs with $LGX_PATH
+      # pointing at the unsigned .lgx; it must either modify in place or
+      # write the signed result to $LGX_SIGNED_OUT.
+      #
+      # signing_mode: external
+      # signing_command: |
+      #   curl -fsSL -X POST --data-binary @"$LGX_PATH" \
+      #        -H "X-Build-Id: ${GITHUB_RUN_ID}" \
+      #        -o "$LGX_SIGNED_OUT" \
+      #        "$JENKINS_SIGNING_URL"
+
+    secrets:
+      # Inline mode reads this; external mode ignores it (the rig holds
+      # the key). Wired via `secrets: inherit` from each caller so the
+      # individual release-*.yml files don't need to know which secret
+      # names matter.
+      signing_key: ${{ secrets.LOGOS_SIGNING_KEY }}

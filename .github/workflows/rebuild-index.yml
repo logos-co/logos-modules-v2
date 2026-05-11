@@ -1,0 +1,17 @@
+name: Rebuild index
+
+# Automatically regenerates the rolling `index` release whenever a per-module
+# release fires the `rebuild-index` repository_dispatch event. Also runs on a
+# six-hourly schedule as a catch-up so a missed dispatch can't strand the
+# catalog.
+
+on:
+  workflow_dispatch: {}
+  repository_dispatch:
+    types: [rebuild-index]
+  schedule:
+    - cron: '17 */6 * * *'
+
+jobs:
+  rebuild:
+    uses: logos-co/logos-modules-release-action/.github/workflows/rebuild-index.yml@v1

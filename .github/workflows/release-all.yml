@@ -1,0 +1,43 @@
+name: Release all modules
+
+# Umbrella workflow that releases every submodule in the repo in
+# parallel. Useful for:
+#   - The initial bootstrap of the v2 repo after pushing it to GitHub
+#     for the first time.
+#   - Cutting a coordinated "everything at once" set of releases after
+#     a breaking change in a shared dependency.
+#
+# Each module is released through the same _release-module.yml local
+# reusable workflow that the individual release-<module>.yml files use,
+# so signing config / Nix build steps / index regeneration all stay
+# consistent between solo and bulk runs.
+#
+# `fail-fast: false` lets one module's build fail without aborting the
+# others — partial success is preferable when bootstrapping 13 modules.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - logos-accounts-module
+          - logos-accounts-ui
+          - logos-blockchain-module
+          - logos-blockchain-ui
+          - logos-chat-module
+          - logos-chat-ui
+          - logos-delivery-module
+          - logos-execution-zone-module
+          - logos-execution-zone-wallet-ui
+          - logos-storage-module
+          - logos-storage-ui
+          - logos-wallet-module
+          - logos-wallet-ui
+    uses: ./.github/workflows/_release-module.yml
+    with:
+      module_path: submodules/${{ matrix.module }}
+    secrets: inherit
